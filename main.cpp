@@ -1,78 +1,96 @@
 #include "mbed.h"
-#include <string>
-#include <iostream>
-using std::string;
+#include <cstdio>
 
 
-class player {       
- protected:
-    string pClass;        
-    int pHealth, pMana, pAtk, pDef, pLives;
-    char customChar;
-    
-    // character sprites
-
-    player( string c, int h, int a, int d, int l){
-        pClass = c;
-        pHealth = h;
-        pAtk = a;
-        pDef = d;
-        pLives = l;
-    }
+class Character {
+    protected:
+        const char* Class;
+        int health, atk, def, mana;
 
     public:
-    // Setters
-    void setpHealth(int x) {
-      pHealth = x;
-    }
-    // Getters
-    int getpHealth() {
-      return pHealth;
-    }
-    // do same for others 
+        Character(const char* c, int h, int a, int d, int m) {
+            Class = c;
+            health = h;
+            atk = a;
+            def = d;
+            mana = m;
+        }
 
-    //methods to be created:
+        bool isAlive() const {
+            return health > 0;
+        }
 
-    //attack
-    //abilities
-    //movement ?  
-    //defend
-    //potions 
-    //
+        void heal(int amount) {
+        health += amount;
+        }
+
+        void takeDamage(int dmg) {
+            int finalDmg = dmg - def;
+            if (finalDmg < 1) finalDmg = 1;
+
+            health -= finalDmg;
+            if (health < 0) health = 0;
+        }
+
+        void attack(Character& target) {
+            target.takeDamage(atk);
+        }
+
+        bool useMana(int amount) {
+                if (mana >= amount) {
+                mana -= amount;
+                return true;
+             }
+            return false;
+        }
+
+        //getters
+        int getHealth() const {
+            return health;
+        }
+
+        const char* getClass() const {
+            return Class;
+        }
 };
 
-class enemy {
-  protected:
-    string eClass;        
-    int eHealth, eMana, eAtk, eDef, eLives;     
-
-    // character sprites
-
-    enemy( string c, int m, int a, int d, int l) {
-        eClass = c;
-        eMana = m;
-        eAtk = a;
-        eDef = d;
-        eLives = l;
-    }
-
+class Player : public Character {
     public:
-    // Setters
-    void seteHealth(int x) {
-      eHealth = x;
-    }
-    // Getters
-    int geteHealth() {
-      return eHealth;
-    }
-    // do same for others 
+        Player(const char* t, int h, int a, int d, int m)
+            : Character(t, h, a, d, m) {}
+
 };
 
-int main()
-{
+class Enemy : public Character {
+    public:
+        Enemy(const char* t, int h, int a, int d, int m)
+            : Character(t, h, a, d, m) {}
+};
 
 
-    while (true) {
 
+int main() {
+    Player player("Warrior", 100, 20, 5, 10);
+    Enemy enemy("Goblin", 50, 10, 2, 0);
+
+    while (player.isAlive() && enemy.isAlive()) {
+
+        printf("%s attacks %s\n", player.getClass(), enemy.getClass());
+        player.attack(enemy);
+        printf("Enemy HP: %d\n\n", enemy.getHealth());
+
+        if (!enemy.isAlive()) break;
+
+        printf("%s attacks %s\n", enemy.getClass(), player.getClass());
+        enemy.attack(player);
+        printf("Player HP: %d\n\n", player.getHealth());
+
+        thread_sleep_for(1000);
+    }
+
+    if (player.isAlive()) {
+        printf("You win\n");
+    } else {
+        printf("You Lose\n");
     }
 }
